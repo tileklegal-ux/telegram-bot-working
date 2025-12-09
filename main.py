@@ -4,7 +4,7 @@ from telegram import Update
 from telegram.ext import Application, CommandHandler, ContextTypes 
 from dotenv import load_dotenv 
  
-load_dotenv()  # Загружает переменные из .env файла 
+load_dotenv()  
  
 logging.basicConfig(level=logging.INFO) 
 logger = logging.getLogger(__name__) 
@@ -16,8 +16,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
  
 def main(): 
     if not BOT_TOKEN: 
-        logger.error("No BOT_TOKEN in environment variables") 
-        print("Current env variables:", dict(os.environ)) 
+        logger.error("No BOT_TOKEN") 
         return 
  
     app = Application.builder().token(BOT_TOKEN).build() 
