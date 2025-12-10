@@ -15,7 +15,7 @@ FREE_DAILY_LIMIT = 3
  
 # OpenAI конфигурация 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "") 
-OPENAI_MODEL = "gpt-3.5-turbo"  # Можно использовать gpt-4 
+OPENAI_MODEL = "gpt-3.5-turbo" 
  
 # Проверяем наличие ключа OpenAI 
 if OPENAI_API_KEY: 
@@ -44,7 +44,6 @@ MARKET_DATA = {
  
 # ==================== OPENAI ФУНКЦИИ ==================== 
 def get_openai_client(): 
-    """Получаем клиент OpenAI""" 
     if not HAS_OPENAI: 
         return None 
     try: 
@@ -53,23 +52,23 @@ def get_openai_client():
         return None 
  
 async def analyze_with_openai(product_name, analysis_type="product"): 
-    """Анализ товара/ниши с помощью OpenAI""" 
     client = get_openai_client() 
     if not client: 
         return await get_fallback_analysis(product_name, analysis_type) 
  
     try: 
         if analysis_type == "product": 
+            prompt = f"Проанализируй товар '{product_name}' для онлайн-бизнеса. Ответь коротко по пунктам: спрос, конкуренция, маржа, рекомендация, аудитория, каналы продаж." 
         else:  # niche analysis 
+            prompt = f"Проанализируй нишу '{product_name}' для e-commerce. Ответь коротко: объем рынка, конкуренция, маржа, сезонность, тренды, рекомендация." 
  
-        # Асинхронный запрос к OpenAI 
         loop = asyncio.get_event_loop() 
         response = await loop.run_in_executor( 
             None, 
             lambda: client.ChatCompletion.create( 
                 model=OPENAI_MODEL, 
                 messages=[ 
-                    {"role": "system", "content": "Ты бизнес-аналитик ARTBAZAR AI. Отвечай кратко и по делу."}, 
+                    {"role": "system", "content": "Ты бизнес-аналитик ARTBAZAR AI. Отвечай кратко."}, 
                     {"role": "user", "content": prompt} 
                 ], 
                 temperature=0.7, 
@@ -85,14 +84,12 @@ async def analyze_with_openai(product_name, analysis_type="product"):
         return await get_fallback_analysis(product_name, analysis_type) 
  
 def format_ai_response(text, analysis_type, product_name): 
-    """Форматирование ответа от AI""" 
     if analysis_type == "product": 
-        return f"🎯 *ARTBAZAR AI: СКРИНИНГ ТОВАРА*\\n\\n🏷 Товар: {product_name}\\n\\n{text}\\n\\n🤖 *Анализ выполнен с помощью OpenAI*" 
+        return f"🎯 *ARTBAZAR AI: СКРИНИНГ ТОВАРА*\\n\\n🏷 Товар: {product_name}\\n\\n{text}\\n\\n🤖 *Анализ выполнен с OpenAI*" 
     else: 
-        return f"📈 *ARTBAZAR AI: ПРОФИЛЬ НИШИ*\\n\\n🏷 Ниша: {product_name}\\n\\n{text}\\n\\n🤖 *Анализ выполнен с помощью OpenAI*" 
+        return f"📈 *ARTBAZAR AI: ПРОФИЛЬ НИШИ*\\n\\n🏷 Ниша: {product_name}\\n\\n{text}\\n\\n🤖 *Анализ выполнен с OpenAI*" 
  
 async def get_fallback_analysis(product_name, analysis_type): 
-    """Резервный анализ если OpenAI не работает""" 
     if analysis_type == "product": 
         niche = random.choice(list(MARKET_DATA.keys())) 
         data = MARKET_DATA[niche] 
@@ -107,24 +104,22 @@ async def get_fallback_analysis(product_name, analysis_type):
         return f"❌ Ниша '{product_name}' не найдена\\n\\nДоступные ниши:\\n" + "\\n".join([f"• {n}" for n in MARKET_DATA.keys()]) 
  
 async def analyze_margin_with_ai(cost, price): 
-    """Маржинальный анализ с AI рекомендациями""" 
     profit = price - cost 
     margin = (profit / price) * 100 
     roi = (profit / cost) * 100 
  
-    # Пытаемся получить AI рекомендацию 
     ai_advice = "" 
     client = get_openai_client() 
     if client: 
         try: 
-            prompt = f"Товар: себестоимость {cost} ₸, цена {price} ₸. Маржа {margin:.1f}%, ROI {roi:.1f}%. Дай одну краткую рекомендацию предпринимателю." 
+            prompt = f"Товар: себестоимость {cost} ₸, цена {price} ₸. Маржа {margin:.1f}%, ROI {roi:.1f}%. Дай краткую рекомендацию предпринимателю." 
             loop = asyncio.get_event_loop() 
             response = await loop.run_in_executor( 
                 None, 
                 lambda: client.ChatCompletion.create( 
                     model=OPENAI_MODEL, 
                     messages=[ 
-                        {"role": "system", "content": "Ты финансовый консультант. Отвечай одной фразой."}, 
+                        {"role": "system", "content": "Ты финансовый консультант."}, 
                         {"role": "user", "content": prompt} 
                     ], 
                     temperature=0.7, 
