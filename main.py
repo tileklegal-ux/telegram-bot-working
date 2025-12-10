@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*- 
 import os 
 import logging 
 from telegram import Update, ReplyKeyboardMarkup 
@@ -7,18 +8,16 @@ BOT_TOKEN = os.getenv("BOT_TOKEN")
  
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE): 
  
-    # 1. Создаем список кнопок (только текст, без эмодзи) 
     keyboard = [ 
         ["ANALIZ TOVARA", "PROFIL NISHI"], 
         ["RASCHET MARZHI", "POMOSH"] 
     ] 
  
-    # 2. Создаем РЕАЛЬНУЮ клавиатуру для ответа 
     reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True, one_time_keyboard=False) 
  
-    # 3. Отправляем сообщение С КЛАВИАТУРОЙ 
     await update.message.reply_text( 
         text="Test bot rabotayet! Viborite:", 
+        reply_markup=reply_markup 
     ) 
  
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE): 
