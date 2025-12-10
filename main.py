@@ -1,7 +1,7 @@
 import os 
 import json 
 import logging 
-from datetime import datetime 
+from datetime import datetime, timedelta 
 from telegram import Update, ReplyKeyboardMarkup, InlineKeyboardMarkup, InlineKeyboardButton 
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes, CallbackQueryHandler 
  
@@ -318,21 +318,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         keyboard = [["🇷🇺 Русский", "🇰🇿 Қазақша"], ["🇰🇬 Кыргызча"]] 
         markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True) 
         await update.message.reply_text("🌐 *ARTBAZAR AI*\\nВыберите язык:", parse_mode="Markdown", reply_markup=markup) 
- 
-async def handle_language(update: Update, context: ContextTypes.DEFAULT_TYPE): 
-    user_id = update.effective_user.id 
-    text = update.message.text 
- 
-    if text in ["🇷🇺 Русский", "🇰🇿 Қазақша", "🇰🇬 Кыргызча"]: 
-        lang = {"🇷🇺 Русский": "RU", "🇰🇿 Қазақша": "KZ", "🇰🇬 Кыргызча": "KG"}[text] 
-        update_user(user_id, {"lang": lang}) 
- 
-        if user_id == OWNER_ID: 
-            await show_owner_menu(update, user_id) 
-        elif user_id in MANAGER_IDS: 
-            await show_manager_menu(update, user_id) 
-        else: 
-            await show_user_menu(update, user_id) 
  
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE): 
     user_id = update.effective_user.id 
