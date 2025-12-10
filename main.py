@@ -70,9 +70,7 @@ def check_limit(user_id):
         user["last_reset"] = today 
         update_user(user_id, user) 
     if user.get("premium_until"): 
-        if datetime.now() <= datetime.strptime(user["premium_until"], "%Y-%m-%d"): 
             return True 
-    return user["daily_used"] < FREE_DAILY_LIMIT 
  
 def use_analysis(user_id): 
     user = get_user(user_id) 
@@ -192,7 +190,10 @@ async def user_handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE
 # ==================== ИНТЕРФЕЙС МЕНЕДЖЕРА ==================== 
 async def show_manager_menu(update, user_id): 
     db = load_db() 
-    active_users = sum(1 for u in db["users"].values() if u.get("total_analytics", 0) 
+    active_users = 0 
+    for u in db["users"].values(): 
+        if u.get("total_analytics", 0) 
+            active_users += 1 
     menu_text = f"👨‍💼 *ARTBAZAR AI - МЕНЕДЖЕР ПАНЕЛЬ*\\n\\n👥 Пользователи: {len(db['users'])}\\n📊 Активные: {active_users}\\n💰 Выручка: {db.get('revenue', 0):,} сом" 
     keyboard = [ 
         ["📊 СТАТИСТИКА", "👥 ПОЛЬЗОВАТЕЛИ"], 
@@ -216,7 +217,8 @@ async def manager_handle_message(update: Update, context: ContextTypes.DEFAULT_T
  
     elif text == "👥 ПОЛЬЗОВАТЕЛИ": 
         db = load_db() 
-        recent_users = list(db["users"].items())[-10:]  # Последние 10 пользователей 
+        user_items = list(db["users"].items()) 
+        recent_users = user_items[-10:] if len(user_items)  else user_items 
         users_text = "👥 *ПОСЛЕДНИЕ ПОЛЬЗОВАТЕЛИ*\\n\\n" 
         for uid, user in recent_users: 
             users_text += f"ID: {uid[:8]}... | Анализов: {user.get('total_analytics', 0)}\\n" 
@@ -229,7 +231,11 @@ async def manager_handle_message(update: Update, context: ContextTypes.DEFAULT_T
  
     elif text == "📈 АНАЛИТИКА": 
         db = load_db() 
-        top_users = sorted([(uid, u.get("total_analytics", 0)) for uid, u in db["users"].items()], key=lambda x: x[1], reverse=True)[:5] 
+        user_list = [] 
+        for uid, u in db["users"].items(): 
+            user_list.append((uid, u.get("total_analytics", 0))) 
+        user_list.sort(key=lambda x: x[1], reverse=True) 
+        top_users = user_list[:5] 
         analytics = "📈 *ТОП-5 АКТИВНЫХ ПОЛЬЗОВАТЕЛЕЙ*\\n\\n" 
         for i, (uid, count) in enumerate(top_users, 1): 
             analytics += f"{i}. ID: {uid[:8]}... - {count} анализов\\n" 
@@ -257,14 +263,24 @@ async def owner_handle_message(update: Update, context: ContextTypes.DEFAULT_TYP
  
     elif text == "📊 ФИНАНСЫ": 
         db = load_db() 
-        finance = f"💰 *ФИНАНСОВАЯ АНАЛИТИКА*\\n\\n💵 Общая выручка: {db.get('revenue', 0):,} сом\\n📊 Средний чек: {db.get('revenue', 0)/max(1, len(db.get('premium_users', []))):,.0f} сом\\n💎 Премиум подписок: {len(db.get('premium_users', []))}\\n🔄 Ежемесячный рост: +15%" 
+        premium_count = len(db.get("premium_users", [])) 
+        avg_check = db.get("revenue", 0) / max(1, premium_count) 
+        finance = f"💰 *ФИНАНСОВАЯ АНАЛИТИКА*\\n\\n💵 Общая выручка: {db.get('revenue', 0):,} сом\\n📊 Средний чек: {avg_check:,.0f} сом\\n💎 Премиум подписок: {premium_count}\\n🔄 Ежемесячный рост: +15%" 
         await update.message.reply_text(finance, parse_mode="Markdown") 
  
     elif text == "👥 ЮЗЕРЫ": 
         db = load_db() 
         today = datetime.now().strftime("%Y-%m-%d") 
-        new_today = sum(1 for u in db["users"].values() if u.get("join_date") == today) 
-        users = f"👥 *АНАЛИТИКА ПОЛЬЗОВАТЕЛЕЙ*\\n\\n📊 Всего: {len(db['users']):,}\\n🆕 Новые сегодня: {new_today}\\n📈 ARPU: {db.get('revenue', 0)/max(1, len(db['users'])):.1f} сом\\n📊 Конверсия в премиум: {len(db.get('premium_users', []))/max(1, len(db['users']))*100:.1f}%" 
+        new_today = 0 
+        for u in db["users"].values(): 
+            if u.get("join_date") == today: 
+                new_today += 1 
+        total_users = len(db["users"]) 
+        revenue = db.get("revenue", 0) 
+        premium_count = len(db.get("premium_users", [])) 
+        arpu = revenue / max(1, total_users) 
+        conversion = (premium_count / max(1, total_users)) * 100 
+        users = f"👥 *АНАЛИТИКА ПОЛЬЗОВАТЕЛЕЙ*\\n\\n📊 Всего: {total_users:,}\\n🆕 Новые сегодня: {new_today}\\n📈 ARPU: {arpu:.1f} сом\\n📊 Конверсия в премиум: {conversion:.1f}%" 
         await update.message.reply_text(users, parse_mode="Markdown") 
  
     elif text == "⚙️ НАСТРОЙКИ": 
