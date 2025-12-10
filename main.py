@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*- 
 import os 
 import logging 
 from telegram import Update, ReplyKeyboardMarkup 
@@ -8,20 +7,19 @@ BOT_TOKEN = os.getenv("BOT_TOKEN")
  
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE): 
     keyboard = [ 
-        ["ANALIZ TOVARA", "PROFIL NISHI"], 
-        ["RASCHET MARZHI", "POMOSH"] 
+        ["ANALYZE PRODUCT", "PROFILE NICHE"], 
+        ["CALCULATE MARGIN", "HELP"] 
     ] 
-    reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True) 
-    await update.message.reply_text("Test bot rabotayet! Viborite:", reply_markup=reply_markup) 
+    markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True) 
+    await update.message.reply_text("ARTBAZAR AI ready! Choose:", reply_markup=markup) 
  
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE): 
-    await update.message.reply_text(f"Vi nazhali: {update.message.text}") 
+    await update.message.reply_text(f"Pressed: {update.message.text}") 
  
 def main(): 
     logging.basicConfig(level=logging.INFO) 
     app = Application.builder().token(BOT_TOKEN).build() 
     app.add_handler(CommandHandler("start", start)) 
-    logging.info("Bot zapushen!") 
     app.run_polling() 
  
 if __name__ == "__main__": 
