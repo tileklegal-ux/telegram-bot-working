@@ -9,7 +9,7 @@ from telegram.ext import Application, CommandHandler, MessageHandler, filters, C
  
 # ==================== КОНФИГУРАЦИЯ ==================== 
 OWNER_ID = 1974482384 
-MANAGER_ID = 571499876  # @artbazar_support 
+MANAGER_ID = 571499876  
 MANAGER_USERNAME = "@artbazar_manager" 
 FREE_DAILY_LIMIT = 3 
  
@@ -220,7 +220,7 @@ async def handle_owner_command(update, text, user_id):
  
     if text == "📊 Статистика": 
         ai_status = "✅ Подключен" if HAS_OPENAI else "❌ Не подключен" 
-        stats = f"📊 *СТАТИСТИКА СИСТЕМЫ*\\n\\n👥 Пользователей: {len(db['users']):,}\\n📊 Анализов: {db.get('analytics', 0):,}\\n🤖 AI-анализов: {db.get('ai_analytics', 0):,}\\n🧠 OpenAI: {ai_status}\\n💰 Выручка: {db.get('revenue', 0):,} сом\\n📅 Дата: {datetime.now().strftime('%d.%m.%Y %H:%M')}" 
+        stats = f"📊 *СТАТИСТИКА СИСТЕМЫ*\\n\\n👥 Пользователей: {len(db['users']):,}\\n📊 Анализов: {db.get('analytics', 0):,}\\n🤖 AI-анализов: {db.get('ai_analytics', 0):,}\\n🧠 OpenAI: {ai_status}\\n💰 Выручка: {db.get('revenue', 0):,} сом\\n📅 Дата: {datetime.now().strftime('%%d.%%m.%%Y %%H:%%M')}" 
         await update.message.reply_text(stats, parse_mode="Markdown") 
  
     elif text == "💰 Финансы": 
@@ -240,7 +240,7 @@ async def handle_owner_command(update, text, user_id):
         for u in db["users"].values(): 
             if u.get("ai_used", 0) 
                 ai_users += 1 
-        users = f"👥 *АНАЛИТИКА ПОЛЬЗОВАТЕЛЕЙ*\\n\\n📊 Всего пользователей: {users_count:,}\\n📈 Активных пользователей: {active_users}\\n🤖 Пользователей AI: {ai_users}\\n📊 Конверсия: {(active_users/max(1, users_count))*100:.1f}%" 
+        users = f"👥 *АНАЛИТИКА ПОЛЬЗОВАТЕЛЕЙ*\\n\\n📊 Всего пользователей: {users_count:,}\\n📈 Активных пользователей: {active_users}\\n🤖 Пользователей AI: {ai_users}\\n📊 Конверсия: {(active_users/max(1, users_count))*100:.1f}%%" 
         await update.message.reply_text(users, parse_mode="Markdown") 
  
     elif text == "⚙️ Настройки": 
@@ -268,7 +268,7 @@ async def handle_manager_command(update, text, user_id):
     db = load_db() 
  
     if text == "📊 СТАТИСТИКА": 
-        stats = f"📊 *СТАТИСТИКА*\\n\\n👥 Пользователей: {len(db['users']):,}\\n📊 Анализов: {db.get('analytics', 0):,}\\n🤖 AI-анализов: {db.get('ai_analytics', 0):,}\\n💰 Выручка: {db.get('revenue', 0):,} сом\\n📅 Дата: {datetime.now().strftime('%d.%m.%Y %H:%M')}" 
+        stats = f"📊 *СТАТИСТИКА*\\n\\n👥 Пользователей: {len(db['users']):,}\\n📊 Анализов: {db.get('analytics', 0):,}\\n🤖 AI-анализов: {db.get('ai_analytics', 0):,}\\n💰 Выручка: {db.get('revenue', 0):,} сом\\n📅 Дата: {datetime.now().strftime('%%d.%%m.%%Y %%H:%%M')}" 
         await update.message.reply_text(stats, parse_mode="Markdown") 
  
     elif text == "👥 ПОЛЬЗОВАТЕЛИ": 
