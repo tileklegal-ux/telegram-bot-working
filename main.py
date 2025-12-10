@@ -58,9 +58,9 @@ async def analyze_with_openai(product_name, analysis_type="product"):
  
     try: 
         if analysis_type == "product": 
-            prompt = f"Проанализируй товар '{product_name}' для онлайн-бизнеса. Ответь коротко по пунктам: спрос, конкуренция, маржа, рекомендация, аудитория, каналы продаж." 
-        else:  # niche analysis 
-            prompt = f"Проанализируй нишу '{product_name}' для e-commerce. Ответь коротко: объем рынка, конкуренция, маржа, сезонность, тренды, рекомендация." 
+            prompt = f"Проанализируй товар '{product_name}' для онлайн-бизнеса. Ответь коротко." 
+        else:  
+            prompt = f"Проанализируй нишу '{product_name}' для e-commerce. Ответь коротко." 
  
         loop = asyncio.get_event_loop() 
         response = await loop.run_in_executor( 
@@ -68,7 +68,7 @@ async def analyze_with_openai(product_name, analysis_type="product"):
             lambda: client.ChatCompletion.create( 
                 model=OPENAI_MODEL, 
                 messages=[ 
-                    {"role": "system", "content": "Ты бизнес-аналитик ARTBAZAR AI. Отвечай кратко."}, 
+                    {"role": "system", "content": "Ты бизнес-аналитик ARTBAZAR AI."}, 
                     {"role": "user", "content": prompt} 
                 ], 
                 temperature=0.7, 
@@ -112,7 +112,7 @@ async def analyze_margin_with_ai(cost, price):
     client = get_openai_client() 
     if client: 
         try: 
-            prompt = f"Товар: себестоимость {cost} ₸, цена {price} ₸. Маржа {margin:.1f}%, ROI {roi:.1f}%. Дай краткую рекомендацию предпринимателю." 
+            prompt = f"Товар: себестоимость {cost} ₸, цена {price} ₸. Маржа {margin:.1f}%, ROI {roi:.1f}%. Дай рекомендацию." 
             loop = asyncio.get_event_loop() 
             response = await loop.run_in_executor( 
                 None, 
@@ -230,8 +230,16 @@ async def handle_owner_command(update, text, user_id):
  
     elif text == "👥 Пользователи": 
         users_count = len(db["users"]) 
-        active_users = sum(1 for u in db["users"].values() if u.get("total_analytics", 0) 
-        ai_users = sum(1 for u in db["users"].values() if u.get("ai_used", 0) 
+        # Простой подсчет активных пользователей 
+        active_users = 0 
+        for u in db["users"].values(): 
+            if u.get("total_analytics", 0) 
+                active_users += 1 
+        # Простой подсчет AI пользователей 
+        ai_users = 0 
+        for u in db["users"].values(): 
+            if u.get("ai_used", 0) 
+                ai_users += 1 
         users = f"👥 *АНАЛИТИКА ПОЛЬЗОВАТЕЛЕЙ*\\n\\n📊 Всего пользователей: {users_count:,}\\n📈 Активных пользователей: {active_users}\\n🤖 Пользователей AI: {ai_users}\\n📊 Конверсия: {(active_users/max(1, users_count))*100:.1f}%" 
         await update.message.reply_text(users, parse_mode="Markdown") 
  
@@ -265,7 +273,10 @@ async def handle_manager_command(update, text, user_id):
  
     elif text == "👥 ПОЛЬЗОВАТЕЛИ": 
         recent_users = [] 
-        for uid, user in list(db["users"].items())[-5:]: 
+        user_items = list(db["users"].items()) 
+        if len(user_items) 
+            user_items = user_items[-5:] 
+        for uid, user in user_items: 
             name = user.get("first_name", "Пользователь") 
             ai = f" (🤖{user.get('ai_used', 0)})" if user.get("ai_used", 0)  else "" 
             recent_users.append(f"• {name} - {user.get('total_analytics', 0)} анализ{ai}") 
@@ -281,8 +292,8 @@ async def handle_manager_command(update, text, user_id):
         for uid, user in db["users"].items(): 
             top_users.append((uid, user.get("total_analytics", 0), user.get("ai_used", 0))) 
         top_users.sort(key=lambda x: x[1], reverse=True) 
-        top5 = top_users[:3] 
-        analytics = f"📈 *АНАЛИТИКА АКТИВНОСТИ*\\n\\nТоп-3 активных пользователей:\\n" 
+        top5 = top_users[:3] if len(top_users)  else top_users 
+        analytics = f"📈 *АНАЛИТИКА АКТИВНОСТИ*\\n\\nТоп активных пользователей:\\n" 
         for i, (uid, count, ai_count) in enumerate(top5, 1): 
             ai = f" (🤖{ai_count})" if ai_count  else "" 
             analytics += f"{i}. ID: {uid[:8]}... - {count} анализ{ai}\\n" 
