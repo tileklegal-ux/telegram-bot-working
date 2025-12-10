@@ -6,12 +6,11 @@ from telegram import Update, ReplyKeyboardMarkup
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes 
  
 # ==================== ARTBAZAR AI КОНФИГ ==================== 
-OWNER_ID = 1974482384  # Владелец 
-MANAGER_USERNAME = "@artbazar_manager"  # Менеджер 
-FREE_DAILY_LIMIT = 3  # 3 анализа/день 
+OWNER_ID = 1974482384 
+MANAGER_USERNAME = "@artbazar_manager" 
+FREE_DAILY_LIMIT = 3 
  
-# ==================== БАЗА ДАННЫХ ARTBAZAR ==================== 
-MARKET_DATA = {  # Данные для анализа 
+MARKET_DATA = { 
     "Товары для животных": {"спрос": 200000, "конкуренция": 9, "маржа": 51, "сезон": "Март"}, 
     "Домашний текстиль": {"спрос": 319000, "конкуренция": 24, "маржа": 17, "сезон": "Ноябрь"}, 
     "Посуда": {"спрос": 415000, "конкуренция": 9, "маржа": 45, "сезон": "Круглый год"}, 
@@ -64,33 +63,28 @@ def use_analysis(user_id):
     user["total_analytics"] += 1 
     update_user(user_id, user) 
  
-# ==================== AI АНАЛИЗ ARTBAZAR ==================== 
-def artbazar_product_analysis(product_name, niche=None): 
-    """ARTBAZAR AI анализ товара""" 
+def artbazar_analysis(product_name, niche=None): 
     import random 
     if niche and niche in MARKET_DATA: 
         data = MARKET_DATA[niche] 
- 
+        return f"📈 *ARTBAZAR AI: ПРОФИЛЬ НИШИ*\\nНиша: {niche}\\nСпрос: {data['спрос']:,}/мес\\nКонкуренция: {data['конкуренция']}\\nМаржа: {data['маржа']}%\\nСезон: {data['сезон']}" 
     niches = list(MARKET_DATA.keys()) 
-    selected_niche = random.choice(niches) 
-    data = MARKET_DATA[selected_niche] 
+    selected = random.choice(niches) 
+    data = MARKET_DATA[selected] 
+    return f"🎯 *ARTBAZAR AI: СКРИНИНГ ТОВАРА*\\nТовар: {product_name}\\nНиша: {selected}\\nСпрос: {random.randint(50000,500000):,}/мес\\nКонкуренция: {random.randint(5,50)}\\nМаржа: {random.randint(25,70)}%\\nРекомендация: Перспективный" 
  
- 
-# ==================== ОСНОВНОЙ КОД ==================== 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE): 
     user_id = update.effective_user.id 
- 
     if user_id == OWNER_ID: 
         await owner_dashboard(update) 
         return 
- 
     keyboard = [["🇷🇺 Русский", "🇰🇿 Қазақша"], ["🇰🇬 Кыргызча"]] 
     markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True) 
-    await update.message.reply_text("🌐 *ARTBAZAR AI*\\n\\nВыберите язык интерфейса:", parse_mode="Markdown", reply_markup=markup) 
+    await update.message.reply_text("🌐 *ARTBAZAR AI*\\nВыберите язык:", parse_mode="Markdown", reply_markup=markup) 
  
 async def owner_dashboard(update): 
     db = load_db() 
- 
+    text = f"👑 *ARTBAZAR AI - БИЗНЕС ПАНЕЛЬ*\\nПользователи: {len(db['users'])}\\nАнализов: {db.get('analytics',0)}\\nВыручка: {db.get('revenue',0)} сом" 
     keyboard = [["📊 Статистика", "💰 Финансы"], ["👥 Пользователи", "⚙️ Настройки"]] 
     markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True) 
     await update.message.reply_text(text, parse_mode="Markdown", reply_markup=markup) 
@@ -102,7 +96,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if user_id == OWNER_ID: 
         if text == "📊 Статистика": 
             db = load_db() 
-            await update.message.reply_text(f"📈 Всего анализов: {db.get('analytics', 0)}", parse_mode="Markdown") 
+            await update.message.reply_text(f"📈 Анализов: {db.get('analytics',0)}", parse_mode="Markdown") 
         return 
  
     user = get_user(user_id) 
@@ -115,7 +109,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif text == "🚀 СКРИНИНГ ТОВАРА": 
         if check_limit(user_id): 
             use_analysis(user_id) 
-            await update.message.reply_text("🎯 *Введите название товара для AI-скрининга*\\n\\nПример: \\"Умная колонка Яндекс Станция\\"", parse_mode="Markdown") 
+            await update.message.reply_text("🎯 *Введите название товара*\\n\\nПример: Умная колонка", parse_mode="Markdown") 
             context.user_data["awaiting_product"] = True 
         else: 
             await limit_exceeded(update, user_id) 
@@ -124,36 +118,38 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if check_limit(user_id): 
             use_analysis(user_id) 
             niches = "\\n".join([f"• {n}" for n in MARKET_DATA.keys()]) 
-            await update.message.reply_text(f"📊 *Выберите нишу для глубокого анализа:*\\n{niches}", parse_mode="Markdown") 
+            await update.message.reply_text(f"📊 *Выберите нишу:*\\n{niches}", parse_mode="Markdown") 
             context.user_data["awaiting_niche"] = True 
         else: 
             await limit_exceeded(update, user_id) 
  
     elif text == "💰 МАРЖИНАЛЬНЫЙ АНАЛИЗ": 
-        await update.message.reply_text("🧮 *Введите данные для расчета:*\\n\\n`Себестоимость | Цена продажи`\\n\\n*Пример:* `5000 | 8000`", parse_mode="Markdown") 
+        await update.message.reply_text("🧮 *Введите данные:*\\n\\nСебестоимость | Цена\\n\\nПример: 5000 | 8000", parse_mode="Markdown") 
  
     elif text == "💎 ARTBAZAR PRO": 
+        premium_text = f"💎 *ARTBAZAR PRO*\\n✅ Безлимитные анализы\\n✅ Расширенные отчеты\\n✅ Приоритетная поддержка\\n\\n💰 Тарифы:\\n1 месяц - 499 сом\\n6 месяцев - 1999 сом\\n1 год - 3499 сом\\n\\n👨‍💼 Менеджер: {MANAGER_USERNAME}" 
         await update.message.reply_text(premium_text, parse_mode="Markdown") 
  
     elif text == "🌐 ЯЗЫК": 
         keyboard = [["🇷🇺 Русский", "🇰🇿 Қазақша"], ["🇰🇬 Кыргызча"]] 
         markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True) 
-        await update.message.reply_text("🌐 Выберите язык интерфейса:", reply_markup=markup) 
+        await update.message.reply_text("🌐 Выберите язык:", reply_markup=markup) 
  
     elif text == "❓ ПОМОЩЬ": 
+        help_text = "❓ *ARTBAZAR AI*\\n🚀 СКРИНИНГ ТОВАРА - AI-анализ\\n📈 ПРОФИЛЬ НИШИ - аналитика рынка\\n💰 МАРЖИНАЛЬНЫЙ АНАЛИЗ - расчет прибыли\\n💎 ARTBAZAR PRO - премиум доступ\\n\\n📞 Поддержка: @artbazar_support" 
         await update.message.reply_text(help_text, parse_mode="Markdown") 
  
     elif context.user_data.get("awaiting_product"): 
-        analysis = artbazar_product_analysis(text) 
+        analysis = artbazar_analysis(text) 
         await update.message.reply_text(analysis, parse_mode="Markdown") 
         context.user_data["awaiting_product"] = False 
  
     elif context.user_data.get("awaiting_niche"): 
         if text in MARKET_DATA: 
-            analysis = artbazar_product_analysis(None, text) 
+            analysis = artbazar_analysis(None, text) 
             await update.message.reply_text(analysis, parse_mode="Markdown") 
         else: 
-            await update.message.reply_text("❌ Ниша не найдена в базе ARTBAZAR", parse_mode="Markdown") 
+            await update.message.reply_text("❌ Ниша не найдена", parse_mode="Markdown") 
         context.user_data["awaiting_niche"] = False 
  
     elif "|" in text: 
@@ -162,25 +158,22 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             profit = price - cost 
             margin = (profit / price) * 100 
             roi = (profit / cost) * 100 
+            result = f"🧮 *МАРЖИНАЛЬНЫЙ АНАЛИЗ*\\nСебестоимость: {cost:,.0f} ₸\\nЦена: {price:,.0f} ₸\\nПрибыль: {profit:,.0f} ₸\\nМаржа: {margin:.1f}%\\nROI: {roi:.1f}%" 
             await update.message.reply_text(result, parse_mode="Markdown") 
         except: 
-            await update.message.reply_text("❌ *Ошибка формата*\\n\\nПравильный формат: `Себестоимость | Цена`\\nПример: `5000 | 8000`", parse_mode="Markdown") 
+            await update.message.reply_text("❌ Ошибка формата. Пример: 5000 | 8000", parse_mode="Markdown") 
  
 async def show_main_menu(update, user_id): 
     user = get_user(user_id) 
-    premium = "💎 ARTBAZAR PRO" if user.get("premium_until") else "👤 БАЗОВЫЙ ДОСТУП" 
- 
- 
-    keyboard = [ 
-        ["🚀 СКРИНИНГ ТОВАРА", "📈 ПРОФИЛЬ НИШИ"], 
-        ["💰 МАРЖИНАЛЬНЫЙ АНАЛИЗ", "💎 ARTBAZAR PRO"], 
-        ["🌐 ЯЗЫК", "❓ ПОМОЩЬ"] 
-    ] 
+    premium = "💎 ARTBAZAR PRO" if user.get("premium_until") else "👤 БАЗОВЫЙ" 
+    menu_text = f"🎯 *ARTBAZAR AI*\\nСтатус: {premium}\\nАнализов сегодня: {user['daily_used']}/{FREE_DAILY_LIMIT}\\n\\nВыберите опцию:" 
+    keyboard = [["🚀 СКРИНИНГ ТОВАРА", "📈 ПРОФИЛЬ НИШИ"], ["💰 МАРЖИНАЛЬНЫЙ АНАЛИЗ", "💎 ARTBAZAR PRO"], ["🌐 ЯЗЫК", "❓ ПОМОЩЬ"]] 
     markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True) 
     await update.message.reply_text(menu_text, parse_mode="Markdown", reply_markup=markup) 
  
 async def limit_exceeded(update, user_id): 
     user = get_user(user_id) 
+    text = f"❌ *ЛИМИТ ИСЧЕРПАН*\\nИспользовано: {user['daily_used']}/3\\n\\n💎 ARTBAZAR PRO открывает безлимит\\n👨‍💼 Менеджер: {MANAGER_USERNAME}" 
     await update.message.reply_text(text, parse_mode="Markdown") 
  
 def main(): 
@@ -189,11 +182,9 @@ def main():
     if not BOT_TOKEN: 
         logging.error("No BOT_TOKEN") 
         return 
- 
     app = Application.builder().token(BOT_TOKEN).build() 
     app.add_handler(CommandHandler("start", start)) 
- 
-    logging.info("🚀 ARTBAZAR AI запущен в продакшн режиме") 
+    logging.info("🚀 ARTBAZAR AI запущен") 
     app.run_polling() 
  
 if __name__ == "__main__": 
