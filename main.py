@@ -1,94 +1,136 @@
 ﻿import os
 import logging
-from telegram import Update, ReplyKeyboardMarkup, InlineKeyboardMarkup, InlineKeyboardButton
-from telegram.ext import Application, CommandHandler, MessageHandler, filters, CallbackQueryHandler, ContextTypes
+from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton
+from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 
+# Тексты для кнопок
+MENU_TEXT = """🎨 *ARTBAZAR AI - Ваш AI-аналитик*
+
+Что я умею:
+• 🔍 Анализ товаров
+• 📊 Профилирование ниш  
+• 💰 Расчет маржи
+• ❓ Помощь и обучение
+
+Выберите действие:"""
+
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Отправляем обе клавиатуры: Reply и Inline"""
+    """Обработчик команды /start"""
     
-    # 1. ReplyKeyboardMarkup (для официальных клиентов)
-    reply_keyboard = [["ANALYZE", "PROFILE"], ["MARGIN", "HELP"]]
-    reply_markup = ReplyKeyboardMarkup(reply_keyboard, resize_keyboard=True)
-    
-    # 2. InlineKeyboardMarkup (для всех клиентов)
-    inline_keyboard = [
-        [InlineKeyboardButton("🔍 ANALYZE", callback_data="analyze")],
-        [InlineKeyboardButton("📊 PROFILE", callback_data="profile")],
-        [InlineKeyboardButton("💰 MARGIN", callback_data="margin")],
-        [InlineKeyboardButton("❓ HELP", callback_data="help")]
+    # Создаем inline-клавиатуру
+    keyboard = [
+        [InlineKeyboardButton("🔍 Анализ товара", callback_data="analyze")],
+        [InlineKeyboardButton("📊 Профиль ниши", callback_data="profile")],
+        [InlineKeyboardButton("💰 Расчет маржи", callback_data="margin")],
+        [InlineKeyboardButton("❓ Помощь", callback_data="help")]
     ]
-    inline_markup = InlineKeyboardMarkup(inline_keyboard)
+    
+    reply_markup = InlineKeyboardMarkup(keyboard)
     
     await update.message.reply_text(
-        "🎨 *ARTBAZAR AI*\n\n"
-        "Выберите действие:\n\n"
-        "📱 **Для официального Telegram:**\n"
-        "Клавиатура появится ниже\n\n"
-        "📲 **Для других клиентов:**\n"
-        "Используйте кнопки в сообщении",
+        MENU_TEXT,
         reply_markup=reply_markup,
         parse_mode="Markdown"
     )
-    
-    # Отправляем inline клавиатуру отдельно
-    await update.message.reply_text(
-        "Или выберите здесь:",
-        reply_markup=inline_markup
-    )
 
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Обработчик inline кнопок"""
+    """Обработчик нажатий inline-кнопок"""
     query = update.callback_query
-    await query.answer()
+    await query.answer()  # Убираем "часики" на кнопке
     
-    responses = {
-        "analyze": "🔍 *Анализ продукта*\n\nФункция в разработке...",
-        "profile": "📊 *Профилирование ниши*\n\nСкоро будет доступно!",
-        "margin": "💰 *Расчет маржи*\n\nВ процессе разработки.",
-        "help": "❓ *Помощь*\n\nИспользуйте команду /start\n\nОфициальный Telegram: https://telegram.org"
-    }
+    # Определяем ответ в зависимости от нажатой кнопки
+    if query.data == "analyze":
+        response = """🔍 *Анализ товара*
+
+Я помогу проанализировать любой товар:
+• Определю спрос и тренды
+• Проанализирую конкурентов
+• Рассчитаю потенциал продаж
+• Дам рекомендации по цене
+
+*Как использовать:*
+1. Пришлите ссылку на товар
+2. Или название товара
+3. Я проведу полный анализ"""
+        
+    elif query.data == "profile":
+        response = """📊 *Профилирование ниши*
+
+Я создам детальный профиль ниши:
+• Анализ рынка и объемов
+• Изучение целевой аудитории
+• Выявление ключевых игроков
+• Определение точек роста
+
+*Готов начать?*
+Опишите нишу или пришлите ключевые слова"""
+        
+    elif query.data == "margin":
+        response = """💰 *Расчет маржи*
+
+Рассчитаю точную маржинальность:
+• Себестоимость товара
+• Логистика и накладные расходы
+• Комиссии площадок
+• Чистая прибыль
+
+*Для расчета пришлите:*
+1. Стоимость закупки
+2. Цену продажи
+3. Дополнительные расходы"""
+        
+    elif query.data == "help":
+        response = """❓ *Помощь*
+
+*Основные команды:*
+/start - показать главное меню
+
+*Как работает ARTBAZAR AI:*
+1. Выберите нужную функцию
+2. Следуйте инструкциям
+3. Получите детальный анализ
+
+*Поддержка:*
+По вопросам работы бота обращайтесь к разработчикам.
+
+🎯 *Совет:* Используйте официальный клиент Telegram для лучшего опыта."""
+    
+    else:
+        response = "Неизвестная команда"
+    
+    # Обновляем сообщение с новым текстом и той же клавиатурой
+    keyboard = [
+        [InlineKeyboardButton("🔍 Анализ товара", callback_data="analyze")],
+        [InlineKeyboardButton("📊 Профиль ниши", callback_data="profile")],
+        [InlineKeyboardButton("💰 Расчет маржи", callback_data="margin")],
+        [InlineKeyboardButton("❓ Помощь", callback_data="help")]
+    ]
     
     await query.edit_message_text(
-        responses.get(query.data, "Неизвестная команда"),
+        text=response,
+        reply_markup=InlineKeyboardMarkup(keyboard),
         parse_mode="Markdown"
     )
 
-async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Обработчик текстовых сообщений от Reply клавиатуры"""
-    text = update.message.text
-    
-    responses = {
-        "ANALYZE": "🔍 Вы выбрали анализ продукта",
-        "PROFILE": "📊 Вы выбрали профилирование ниши",
-        "MARGIN": "💰 Вы выбрали расчет маржи",
-        "HELP": "❓ Помощь: установите официальный Telegram"
-    }
-    
-    if text in responses:
-        await update.message.reply_text(responses[text])
-    else:
-        await update.message.reply_text(f"Вы написали: {text}")
-
 def main():
+    """Основная функция запуска бота"""
+    # Настройка логирования
     logging.basicConfig(
-        format='%(asctime)s - %(levelname)s - %(message)s',
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
         level=logging.INFO
     )
     
+    # Создаем приложение
     app = Application.builder().token(BOT_TOKEN).build()
     
-    # Команды
+    # Добавляем обработчики
     app.add_handler(CommandHandler("start", start))
-    
-    # Inline кнопки
     app.add_handler(CallbackQueryHandler(button_handler))
     
-    # Текстовые сообщения
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
-    
-    logging.info("🤖 Бот запущен")
+    # Запускаем бота
+    logging.info("🤖 ARTBAZAR AI запускается...")
     app.run_polling()
 
 if __name__ == "__main__":
